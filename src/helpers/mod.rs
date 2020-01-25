@@ -23,12 +23,12 @@ pub fn to_address<T: web3::Transport>(address: &str, web3: &Web3<T>) -> Address 
   result
 }
 
-pub fn to_ens<T: web3::Transport>(address: Address, web3: &Web3<T>) -> String {
+pub fn to_ens<T: web3::Transport>(address: Address, web3: &Web3<T>) -> Result <String, String> {
   let ens = ENS::new(&web3);
   
-  ens.name(address).unwrap_or_else(|_e| {
-    tui::error(format!("unable to ENS reverse address {}", address));
-    std::process::exit(1);
-  })
+  match ens.name(address) {
+    Ok(s) => Ok(s),
+    Err(_e) => Err(format!("unable to ENS reverse address {}", address))
+  }
 }
 

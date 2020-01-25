@@ -26,16 +26,16 @@ fn main() {
         .version("1.0")
         .author("Olivier Sarrouy <osarrouy@protonmail.com>")
         .setting(AppSettings::ArgRequiredElseHelp)
-        .subcommand(
-            App::new("info")
-                .about("Prints the informations of a wallet")
-                .arg(
-                    Arg::with_name(WALLET_ARG_NAME)
-                        .help(WALLET_ARG_HELP)
-                        .index(1)
-                        .required(true),
-                ),
-        )
+        // .subcommand(
+        //     App::new("info")
+        //         .about("Prints the informations of a wallet")
+        //         .arg(
+        //             Arg::with_name(WALLET_ARG_NAME)
+        //                 .help(WALLET_ARG_HELP)
+        //                 .index(1)
+        //                 .required(true),
+        //         ),
+        // )
         .subcommand(
             App::new("ens")
                 .about("Prints the address and ENS name of a wallet")
@@ -89,9 +89,9 @@ fn main() {
         .get_matches();
 
         match matches.subcommand() {
-            ("info", Some(args)) => {
-                cmd::generics::info(args.value_of(WALLET_ARG_NAME).unwrap(), web3);
-            }
+            // ("info", Some(args)) => {
+            //     cmd::generics::info(args.value_of(WALLET_ARG_NAME).unwrap(), web3);
+            // }
             ("ens", Some(args)) => {
                 cmd::generics::ens(args.value_of(WALLET_ARG_NAME).unwrap(), web3);
             }
