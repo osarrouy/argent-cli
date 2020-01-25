@@ -3,6 +3,7 @@ mod constants;
 mod ens;
 mod helpers;
 mod modules;
+mod token;
 mod tui;
 mod wallet;
 
@@ -77,6 +78,24 @@ fn main() {
                         ),
                 ),
         )
+        .subcommand(
+            App::new("balance")
+                .about("Prints the balance of a wallet")
+                .setting(AppSettings::ArgRequiredElseHelp)
+                .arg(
+                    Arg::with_name(WALLET_ARG_NAME)
+                        .help(WALLET_ARG_HELP)
+                        .index(1)
+                        .required(true),
+                )
+                .arg(
+                    Arg::with_name("token")
+                        .help("Address or symbol of the token")
+                        .index(2)
+                        .required(true)
+                        .default_value("ETH"),
+                ),
+        )
         .get_matches();
 
     match matches.subcommand() {
@@ -98,6 +117,13 @@ fn main() {
             }
             _ => unreachable!(),
         },
+        ("balance", Some(args)) => {
+            cmd::generics::balance(
+                args.value_of(WALLET_ARG_NAME).unwrap(),
+                args.value_of("token").unwrap(),
+                web3,
+            );
+        }
         ("", None) => println!("No subcommand was used"), // If no subcommand was usd it'll match the tuple ("", None)
         _ => unreachable!(), // If all subcommands are defined above, anything else is unreachabe!()
     }

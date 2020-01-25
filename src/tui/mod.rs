@@ -32,7 +32,7 @@ pub fn list(entries: &Vec<String>) {
 }
 
 pub fn error(message: String) {
-    println!("{} {}", "-[ error".red(), message);
+    println!("{} {} {}", "-[".bold(), "error".bold().red(), message);
 }
 
 pub fn end() {

@@ -5,7 +5,7 @@ use web3::api::Web3;
 use web3::contract::Contract;
 use web3::contract::Options;
 use web3::futures::Future;
-use web3::types::{Address, Bytes, FilterBuilder};
+use web3::types::{Address, Bytes, FilterBuilder, U256};
 
 #[derive(Clone, Debug)]
 pub struct Wallet<'a, T: web3::Transport> {
@@ -123,5 +123,36 @@ impl<'a, T: web3::Transport> Wallet<'a, T> {
         }
 
         Ok(modules)
+    }
+
+    pub fn balance(&self, token: Address) -> Result<U256, String> {
+        if token == Address::zero() {
+            let result = self.web3.eth().balance(self.address, None);
+
+            match result.wait() {
+                Ok(s) => return Ok(s),
+                Err(e) => {
+                    return Err(format!(
+                        "unable to fetch ETH balance for {:?}",
+                        self.address
+                    ))
+                }
+            }
+        } else {
+            let contract =
+                Contract::from_json(self.web3.eth(), token, constants::abis::ERC20).unwrap();
+            let result =
+                contract.query("balanceOf", (self.address,), None, Options::default(), None);
+
+            match result.wait() {
+                Ok(s) => return Ok(s),
+                Err(e) => {
+                    return Err(format!(
+                        "unable to fetch token {:?} balance for {:?}",
+                        token, self.address
+                    ))
+                }
+            }
+        }
     }
 }
