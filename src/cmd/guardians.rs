@@ -1,23 +1,23 @@
-use web3::api::Web3;
 use crate::helpers;
 use crate::tui;
 use crate::wallet::Wallet;
+use web3::api::Web3;
 
 pub fn ls<T: web3::Transport>(wallet: &str, web3: Web3<T>) {
-  let address = helpers::to_address(wallet, &web3);
-  let wallet = Wallet::new(address, &web3);
-  
-  let guardians = wallet.guardians().unwrap_or_else(|e| {
-    tui::error(e);
-    std::process::exit(1);
-  });
+    let address = helpers::to_address(wallet, &web3);
+    let wallet = Wallet::new(address, &web3);
 
-  let mut list = Vec::<String>::new();
-  for guardian in guardians.iter() {
-    list.push(format!("{:?}", guardian));
-  }
+    let guardians = wallet.guardians().unwrap_or_else(|e| {
+        tui::error(e);
+        std::process::exit(1);
+    });
 
-  tui::header("guardians");
-  tui::list(&list);
-  tui::end();
+    let mut list = Vec::<String>::new();
+    for guardian in guardians.iter() {
+        list.push(format!("{:?}", guardian));
+    }
+
+    tui::header("guardians");
+    tui::list(&list);
+    tui::end();
 }

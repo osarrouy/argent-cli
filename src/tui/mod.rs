@@ -1,40 +1,40 @@
 use colored::*;
-use web3::types::{Address};
+use web3::types::Address;
 
 pub fn figlet() {
-  println!("
+    println!(
+        "
    / \\   _ __ __ _  ___ _ __ | |_ 
   / _ \\ | '__/ _` |/ _ | '_ \\| __|
  / ___ \\| | | (_| |  __| | | | |_ 
 /_/   \\_|_|  \\__, |\\___|_| |_|\\__| -[ CLI
              |___/     
-   ");
+   "
+    );
 }
 
 pub fn header(message: &str) {
-  println!("\n{} {}", "-[".bold(), message.bold().cyan());
+    println!("\n{} {}", "-[".bold(), message.bold().cyan());
 }
 
 pub fn info(message: String) {
-  println!("{}", message);
+    println!("{}", message);
 }
 
 pub fn address(address: Address) {
-  println!("{}", format!("{:#?}", address));
+    println!("{}", format!("{:#?}", address));
 }
 
 pub fn list(entries: &Vec<String>) {
-  for entry in entries.iter() {
-    println!("{}", entry);
-  }
+    for entry in entries.iter() {
+        println!("{}", entry);
+    }
 }
 
 pub fn error(message: String) {
-  println!("{} {}", "-[ error".red(), message);
+    println!("{} {}", "-[ error".red(), message);
 }
 
 pub fn end() {
-  println!("");
+    println!("");
 }
-
-  

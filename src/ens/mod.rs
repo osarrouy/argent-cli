@@ -1,9 +1,9 @@
+use crate::constants;
 use lazy_static::lazy_static;
 use tiny_keccak::Keccak;
 use web3::contract::{Contract, Options};
-use web3::types::{Address, H256};
 use web3::futures::Future;
-use crate::constants;
+use web3::types::{Address, H256};
 
 struct EnsSetting {
     mainnet_addr: Address,
@@ -11,7 +11,9 @@ struct EnsSetting {
 
 lazy_static! {
     static ref ENS_SETTING: EnsSetting = EnsSetting {
-        mainnet_addr: constants::ENS_MAINNET_ADDR.parse().expect("don't parse ens.mainnet.addr")
+        mainnet_addr: constants::ENS_MAINNET_ADDR
+            .parse()
+            .expect("don't parse ens.mainnet.addr")
     };
 }
 
@@ -23,7 +25,9 @@ struct Resolver<T: web3::Transport> {
 impl<T: web3::Transport> Resolver<T> {
     fn new(ens: &ENS<T>, resolver_addr: &str) -> Self {
         let addr_namehash = H256::from_slice(namehash(resolver_addr).as_slice());
-        let result = ens.contract.query("resolver", (addr_namehash, ), None, Options::default(), None);
+        let result =
+            ens.contract
+                .query("resolver", (addr_namehash,), None, Options::default(), None);
         let resolver_addr: Address = result.wait().expect("resolver.result.wait()");
 
         // resolve
@@ -32,16 +36,18 @@ impl<T: web3::Transport> Resolver<T> {
             resolver_addr,
             constants::abis::PUBLIC_RESOLVER,
             // include_bytes!("./contract/PublicResolver.abi"),
-        ).expect("fail load resolver contract");
+        )
+        .expect("fail load resolver contract");
         Self {
             contract: resolver_contract,
         }
     }
-    
 
     fn address(self, name: &str) -> Result<Address, String> {
         let name_namehash = H256::from_slice(namehash(name).as_slice());
-        let result = self.contract.query("addr", (name_namehash, ), None, Options::default(), None);
+        let result = self
+            .contract
+            .query("addr", (name_namehash,), None, Options::default(), None);
         match result.wait() {
             Ok(s) => Ok(s),
             Err(e) => Err(format!("error: name.result.wait(): {:?}", e)),
@@ -50,7 +56,9 @@ impl<T: web3::Transport> Resolver<T> {
 
     fn name(self, resolver_addr: &str) -> Result<String, String> {
         let addr_namehash = H256::from_slice(namehash(resolver_addr).as_slice());
-        let result = self.contract.query("name", (addr_namehash, ), None, Options::default(), None);
+        let result = self
+            .contract
+            .query("name", (addr_namehash,), None, Options::default(), None);
         match result.wait() {
             Ok(s) => Ok(s),
             Err(e) => Err(format!("error: name.result.wait(): {:?}", e)),
@@ -65,17 +73,17 @@ pub struct ENS<'a, T: web3::Transport> {
 }
 
 impl<'a, T: web3::Transport> ENS<'a, T> {
-
     pub fn new(web3: &'a web3::Web3<T>) -> Self {
         let contract = Contract::from_json(
             web3.eth(),
             ENS_SETTING.mainnet_addr,
             constants::abis::ENS,
             // include_bytes!("./contract/ENS.abi"),
-        ).expect("fail contract::from_json(ENS.abi)");
+        )
+        .expect("fail contract::from_json(ENS.abi)");
         ENS::<'a, T> {
             web3: web3,
-            contract: contract, 
+            contract: contract,
         }
     }
 
@@ -87,7 +95,9 @@ impl<'a, T: web3::Transport> ENS<'a, T> {
 
     pub fn owner(&self, name: &str) -> Result<Address, String> {
         let ens_namehash = H256::from_slice(namehash(name).as_slice());
-        let result = self.contract.query("owner", (ens_namehash, ), None, Options::default(), None);
+        let result = self
+            .contract
+            .query("owner", (ens_namehash,), None, Options::default(), None);
         match result.wait() {
             Ok(s) => Ok(s),
             Err(e) => Err(format!("error: owner.result.wait(): {:?}", e)),
