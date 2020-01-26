@@ -1,16 +1,12 @@
-
 <h1 align="center">
-  <br>
-  <a href="http://www.argent.xyz"><img src="https://raw.githubusercontent.com/osarrouy/argent-cli/master/.github/logo.png" alt="argent-cli" width="200"></a>
-  <br>
   argent-cli
   <br>
 </h1>
 
 <h4 align="center">A Rust rescue CLI for the <a href="http://www.argent.xyz" target="_blank">Argent wallet</a>.</h4>
 
-
 <p align="center">
+  <a href="#disclaimer">Disclaimer</a> •
   <a href="#key-features">Key Features</a> •
   <a href="#how-to-use">How To Use</a> •
   <a href="#commands">Commands</a> •
@@ -23,13 +19,13 @@ The `argent-cli` is not developped by Argent. It is a community project. Use at 
 
 ## Key Features
 
-* Fetch the owner  of an Argent wallet
-* Fetch the ENS name of an Argent wallet
-* Fetch the list of enabled modules on an Argent wallet 
-* Fetch the list of guardians of an Argent wallet
-* Fetch balances of an Argent wallet
-* Lock an Argent wallet [soon]
-* Recover an Argent wallet [soon]
+- Fetch the owner of an Argent wallet
+- Fetch the ENS name of an Argent wallet
+- Fetch the list of enabled modules on an Argent wallet
+- Fetch the list of guardians of an Argent wallet
+- Fetch balances of an Argent wallet
+- Lock an Argent wallet [soon]
+- Recover an Argent wallet [soon]
 
 ## How To Use
 
@@ -50,16 +46,17 @@ $ cp target/release/argent /usr/local/bin
 ```
 
 ## Commands
+
 ```bash
 $ argent --help
 
 
-   / \   _ __ __ _  ___ _ __ | |_ 
+   / \   _ __ __ _  ___ _ __ | |_
   / _ \ | '__/ _` |/ _ | '_ \| __|
- / ___ \| | | (_| |  __| | | | |_ 
+ / ___ \| | | (_| |  __| | | | |_
 /_/   \_|_|  \__, |\___|_| |_|\__| -[ CLI
-             |___/     
-   
+             |___/
+
 argent 1.0
 Olivier Sarrouy <osarrouy@protonmail.com>
 A CLI for the Argent wallet
