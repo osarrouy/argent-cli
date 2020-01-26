@@ -11,7 +11,7 @@ struct EnsSetting {
 
 lazy_static! {
     static ref ENS_SETTING: EnsSetting = EnsSetting {
-        mainnet_addr: constants::ENS_MAINNET_ADDR
+        mainnet_addr: constants::addresses::ENS_MAINNET_ADDR
             .parse()
             .expect("don't parse ens.mainnet.addr")
     };
@@ -30,12 +30,10 @@ impl<T: web3::Transport> Resolver<T> {
                 .query("resolver", (addr_namehash,), None, Options::default(), None);
         let resolver_addr: Address = result.wait().expect("resolver.result.wait()");
 
-        // resolve
         let resolver_contract = Contract::from_json(
             ens.web3.eth(),
             resolver_addr,
             constants::abis::PUBLIC_RESOLVER,
-            // include_bytes!("./contract/PublicResolver.abi"),
         )
         .expect("fail load resolver contract");
         Self {
@@ -74,13 +72,9 @@ pub struct ENS<'a, T: web3::Transport> {
 
 impl<'a, T: web3::Transport> ENS<'a, T> {
     pub fn new(web3: &'a web3::Web3<T>) -> Self {
-        let contract = Contract::from_json(
-            web3.eth(),
-            ENS_SETTING.mainnet_addr,
-            constants::abis::ENS,
-            // include_bytes!("./contract/ENS.abi"),
-        )
-        .expect("fail contract::from_json(ENS.abi)");
+        let contract =
+            Contract::from_json(web3.eth(), ENS_SETTING.mainnet_addr, constants::abis::ENS)
+                .expect("fail contract::from_json(ENS.abi)");
         ENS::<'a, T> {
             web3: web3,
             contract: contract,

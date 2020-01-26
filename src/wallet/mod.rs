@@ -1,5 +1,6 @@
 use crate::constants;
 use crate::helpers;
+use crate::token::Token;
 use std::str::FromStr;
 use web3::api::Web3;
 use web3::contract::Contract;
@@ -100,8 +101,8 @@ impl<'a, T: web3::Transport> Wallet<'a, T> {
             )
             .from_block(constants::ARGENT_GENESIS_BLOCK.into())
             .build();
-
         let result = self.web3.eth().logs(filter);
+
         let logs = match result.wait() {
             Ok(s) => s,
             Err(_e) => {
@@ -125,33 +126,28 @@ impl<'a, T: web3::Transport> Wallet<'a, T> {
         Ok(modules)
     }
 
-    pub fn balance(&self, token: Address) -> Result<U256, String> {
-        if token == Address::zero() {
+    pub fn balance(&self, token: &Token) -> Result<U256, String> {
+        let error = format!(
+            "unable to fetch {} balance for {:?}",
+            token.symbol, self.address
+        );
+
+        if token.address == Address::zero() {
             let result = self.web3.eth().balance(self.address, None);
 
             match result.wait() {
                 Ok(s) => return Ok(s),
-                Err(e) => {
-                    return Err(format!(
-                        "unable to fetch ETH balance for {:?}",
-                        self.address
-                    ))
-                }
+                Err(_e) => return Err(error),
             }
         } else {
             let contract =
-                Contract::from_json(self.web3.eth(), token, constants::abis::ERC20).unwrap();
+                Contract::from_json(self.web3.eth(), token.address, constants::abis::ERC20)
+                    .unwrap();
             let result =
                 contract.query("balanceOf", (self.address,), None, Options::default(), None);
-
             match result.wait() {
                 Ok(s) => return Ok(s),
-                Err(e) => {
-                    return Err(format!(
-                        "unable to fetch token {:?} balance for {:?}",
-                        token, self.address
-                    ))
-                }
+                Err(_e) => return Err(error),
             }
         }
     }
