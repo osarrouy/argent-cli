@@ -17,6 +17,10 @@ pub fn header(message: &str) {
     println!("\n{} {}", "-[".bold(), message.bold().cyan());
 }
 
+pub fn header_with_state(message: &str, state: &str) {
+    println!("\n{} {} [{}]", "-[".bold(), message.bold().cyan(), state);
+}
+
 pub fn info(message: String) {
     println!("{}", message);
 }

@@ -6,7 +6,7 @@ use web3::api::Web3;
 use web3::contract::Contract;
 use web3::contract::Options;
 use web3::futures::Future;
-use web3::types::{Address, Bytes, FilterBuilder, U256};
+use web3::types::{Address, Bytes, FilterBuilder, H256, U256};
 
 #[derive(Clone, Debug)]
 pub struct Wallet<'a, T: web3::Transport> {
@@ -149,6 +149,44 @@ impl<'a, T: web3::Transport> Wallet<'a, T> {
                 Ok(s) => return Ok(s),
                 Err(_e) => return Err(error),
             }
+        }
+    }
+
+    pub fn lock(&self) -> Result<H256, String> {
+        let accounts = match self.web3.eth().accounts().wait() {
+            Ok(s) => s,
+            Err(_e) => return Err(String::from("unable to fetch accounts")),
+        };
+
+        let lock_manager = Address::from_str(&"0bc693480d447ab97aff7aa215d1586f1868cb01").unwrap();
+        let lock_manager =
+            Contract::from_json(self.web3.eth(), lock_manager, constants::abis::LOCK_MANAGER)
+                .unwrap();
+
+        let result = lock_manager.call("lock", (self.address,), accounts[0], Options::default());
+
+        match result.wait() {
+            Ok(s) => Ok(s),
+            Err(_e) => Err(format!("unable to lock {:?}", self.address)),
+        }
+    }
+
+    pub fn unlock(&self) -> Result<H256, String> {
+        let accounts = match self.web3.eth().accounts().wait() {
+            Ok(s) => s,
+            Err(_e) => return Err(String::from("unable to fetch accounts")),
+        };
+
+        let lock_manager = Address::from_str(&"0bc693480d447ab97aff7aa215d1586f1868cb01").unwrap();
+        let lock_manager =
+            Contract::from_json(self.web3.eth(), lock_manager, constants::abis::LOCK_MANAGER)
+                .unwrap();
+
+        let result = lock_manager.call("unlock", (self.address,), accounts[0], Options::default());
+
+        match result.wait() {
+            Ok(s) => Ok(s),
+            Err(_e) => Err(format!("unable to unlock {:?}", self.address)),
         }
     }
 }

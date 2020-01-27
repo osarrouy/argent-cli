@@ -2,6 +2,7 @@ use crate::helpers;
 use crate::token::Token;
 use crate::tui;
 use crate::wallet::Wallet;
+use dialoguer::Confirmation;
 use std::process;
 use web3::api::Web3;
 
@@ -64,4 +65,52 @@ pub fn balance<T: web3::Transport>(wallet: &str, symbol: &str, web3: Web3<T>) {
     tui::header("balance");
     tui::info(format!("{:?} {}", token.to_decimals(balance), token.symbol));
     tui::end();
+}
+
+pub fn lock<T: web3::Transport>(wallet: &str, web3: Web3<T>) {
+    let address = helpers::to_address(wallet, &web3).unwrap_or_else(|e| {
+        tui::error(e);
+        process::exit(1);
+    });
+
+    let wallet = Wallet::new(address, &web3);
+
+    if Confirmation::new()
+        .with_text("-[ are you sure you want to lock this wallet?")
+        .default(false)
+        .interact()
+        .unwrap()
+    {
+        let tx = wallet.lock().unwrap_or_else(|e| {
+            tui::error(e);
+            process::exit(1);
+        });
+
+        tui::header_with_state("lock", "ongoing");
+        tui::info(format!("see https://etherscan.io/tx/{:?}", tx));
+    }
+}
+
+pub fn unlock<T: web3::Transport>(wallet: &str, web3: Web3<T>) {
+    let address = helpers::to_address(wallet, &web3).unwrap_or_else(|e| {
+        tui::error(e);
+        process::exit(1);
+    });
+
+    let wallet = Wallet::new(address, &web3);
+
+    if Confirmation::new()
+        .with_text("-[ are you sure you want to unlock this wallet?")
+        .default(false)
+        .interact()
+        .unwrap()
+    {
+        let tx = wallet.unlock().unwrap_or_else(|e| {
+            tui::error(e);
+            process::exit(1);
+        });
+
+        tui::header_with_state("unlock", "ongoing");
+        tui::info(format!("see https://etherscan.io/tx/{:?}", tx));
+    }
 }
