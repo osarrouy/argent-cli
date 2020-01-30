@@ -3,6 +3,10 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use web3::types::Address;
 
+mod recovery_manager;
+
+pub use self::recovery_manager::RecoveryManager;
+
 lazy_static! {
     static ref MODULES: HashMap<Address, &'static str> = {
         let mut modules = HashMap::new();

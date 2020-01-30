@@ -110,6 +110,48 @@ fn main() {
                         ),
                 ),
         )
+        .subcommand(
+            App::new("recovery")
+                .about("Recovery related commands")
+                .setting(AppSettings::SubcommandRequiredElseHelp)
+                .subcommand(
+                    App::new("init")
+                        .aliases(&["initialize", "execute"])
+                        .about("Initialize the recovery of a wallet")
+                        .arg(
+                            Arg::with_name(WALLET_ARG_NAME)
+                                .help(WALLET_ARG_HELP)
+                                .index(1)
+                                .required(true),
+                        )
+                        .arg(
+                            Arg::with_name("owner")
+                                .help("New owner of the wallet")
+                                .index(2)
+                                .required(true),
+                        ),
+                )
+                .subcommand(
+                    App::new("finalize")
+                        .about("Finalize the recovery of a wallet")
+                        .arg(
+                            Arg::with_name(WALLET_ARG_NAME)
+                                .help(WALLET_ARG_HELP)
+                                .index(1)
+                                .required(true),
+                        ),
+                )
+                .subcommand(
+                    App::new("cancel")
+                        .about("Cancel the recovery of a wallet")
+                        .arg(
+                            Arg::with_name(WALLET_ARG_NAME)
+                                .help(WALLET_ARG_HELP)
+                                .index(1)
+                                .required(true),
+                        ),
+                ),
+        )
         .get_matches();
 
     match matches.subcommand() {
@@ -141,6 +183,22 @@ fn main() {
         ("guardians", Some(params)) => match params.subcommand() {
             ("ls", Some(args)) => {
                 cmd::guardians::ls(args.value_of(WALLET_ARG_NAME).unwrap(), web3);
+            }
+            _ => unreachable!(),
+        },
+        ("recovery", Some(params)) => match params.subcommand() {
+            ("init", Some(args)) => {
+                cmd::recovery::init(
+                    args.value_of(WALLET_ARG_NAME).unwrap(),
+                    args.value_of("owner").unwrap(),
+                    web3,
+                );
+            }
+            ("cancel", Some(args)) => {
+                cmd::recovery::cancel(args.value_of(WALLET_ARG_NAME).unwrap(), web3);
+            }
+            ("finalize", Some(args)) => {
+                cmd::recovery::finalize(args.value_of(WALLET_ARG_NAME).unwrap(), web3);
             }
             _ => unreachable!(),
         },

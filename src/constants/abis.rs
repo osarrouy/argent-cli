@@ -5,3 +5,5 @@ pub const ENS: &[u8] = include_bytes!("../abis/ens.abi");
 pub const PUBLIC_RESOLVER: &[u8] = include_bytes!("../abis/public_resolver.abi");
 pub const ERC20: &[u8] = include_bytes!("../abis/erc20.abi");
 pub const LOCK_MANAGER: &[u8] = include_bytes!("../abis/lock_manager.abi");
+pub const RECOVERY_MANAGER: &[u8] = include_bytes!("../abis/recovery_manager.abi");
+pub const ERC1077_HASH: &[u8] = include_bytes!("../abis/erc1077_hash.abi");
