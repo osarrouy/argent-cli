@@ -4,8 +4,10 @@ use std::str::FromStr;
 use web3::types::Address;
 
 mod recovery_manager;
+mod relayer;
 
 pub use self::recovery_manager::RecoveryManager;
+pub use self::relayer::Relayer;
 
 lazy_static! {
     static ref MODULES: HashMap<Address, &'static str> = {

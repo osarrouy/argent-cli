@@ -1,7 +1,6 @@
 use crate::helpers;
-use crate::tui;
-use crate::wallet::Wallet;
 use crate::modules::RecoveryManager;
+use crate::tui;
 
 use dialoguer::Confirmation;
 use std::process;
@@ -18,7 +17,6 @@ pub fn init<T: web3::Transport>(wallet: &str, owner: &str, web3: Web3<T>) {
         process::exit(1);
     });
 
-
     let recovery_manager = RecoveryManager::new(&web3);
 
     if Confirmation::new()
@@ -27,10 +25,12 @@ pub fn init<T: web3::Transport>(wallet: &str, owner: &str, web3: Web3<T>) {
         .interact()
         .unwrap()
     {
-        let tx = recovery_manager.initialize(wallet, owner).unwrap_or_else(|e| {
-            tui::error(e);
-            process::exit(1);
-        });
+        let tx = recovery_manager
+            .initialize(wallet, owner)
+            .unwrap_or_else(|e| {
+                tui::error(e);
+                process::exit(1);
+            });
 
         tui::header_with_state("recovery initialized", "ongoing");
         tui::info(format!("see https://etherscan.io/tx/{:?}", tx));
@@ -51,10 +51,12 @@ pub fn cancel<T: web3::Transport>(wallet: &str, web3: Web3<T>) {
         .interact()
         .unwrap()
     {
-        let tx = recovery_manager.cancel_recovery(wallet).unwrap_or_else(|e| {
-            tui::error(e);
-            process::exit(1);
-        });
+        let tx = recovery_manager
+            .cancel_recovery(wallet)
+            .unwrap_or_else(|e| {
+                tui::error(e);
+                process::exit(1);
+            });
 
         tui::header_with_state("recovery cancelled", "ongoing");
         tui::info(format!("see https://etherscan.io/tx/{:?}", tx));
@@ -66,7 +68,7 @@ pub fn cancel<T: web3::Transport>(wallet: &str, web3: Web3<T>) {
 }
 
 pub fn finalize<T: web3::Transport>(wallet: &str, web3: Web3<T>) {
-    let address = helpers::to_address(wallet, &web3).unwrap_or_else(|e| {
+    let _address = helpers::to_address(wallet, &web3).unwrap_or_else(|e| {
         tui::error(e);
         process::exit(1);
     });

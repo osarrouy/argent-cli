@@ -1,24 +1,12 @@
 use crate::constants;
 use crate::helpers;
-use crate::token::Token;
-use lazy_static::lazy_static;
+use crate::modules::Relayer;
 use std::str::FromStr;
 use web3::api::Web3;
-use web3::contract::tokens::Tokenize;
 use web3::contract::Contract;
 use web3::contract::Options;
 use web3::futures::Future;
-use web3::types::{
-    Address, Bytes, CallRequest, FilterBuilder, BlockId, BlockNumber, TransactionRequest, H256, H520, U256,
-};
-// use web3::types::block::BlockId;
-// use ethabi::Token;
-
-lazy_static! {
-    static ref value: U256 = web3::types::U256::from(0u32);
-    static ref gas_price: U256 = web3::types::U256::from(0u32);
-    static ref gas_limit: U256 = web3::types::U256::from(250000);
-}
+use web3::types::{Address, Bytes, CallRequest, TransactionRequest, H256, U256};
 
 #[derive(Clone, Debug)]
 pub struct RecoveryManager<'a, T: web3::Transport> {
@@ -43,59 +31,59 @@ impl<'a, T: web3::Transport> RecoveryManager<'a, T> {
         }
     }
 
-    pub fn nonce(&self, wallet: Address) -> Result<U256, String> {
-        let result = self
-            .contract
-            .query("getNonce", (wallet,), None, Options::default(), None);
-
-        match result.wait() {
-            Ok(s) => Ok(s),
-            Err(_e) => Err(format!(
-                "unable to fetch recovery manager nonce for {:?}",
-                wallet
-            )),
-        }
-    }
-
-    pub fn updated_nonce(&self, wallet: Address) -> Result<U256, String> {
-        // let nonce = match self.nonce(wallet) {
-        //     Ok(s) => s,
-        //     Err(e) => return Err(e),
-        // };
-
-        // match nonce.checked_add(U256::from(1)) {
-        //     Some(s) => Ok(s),
-        //     None => Err(format!(
-        //         "unable to update recovery manager nonce for {:?}",
-        //         wallet
-        //     )),
-        // }
-
-        // now = SystemTime::now()
-        // {block number}{timestamp}
-        // let bn = self.web3.eth().block_number().wait().unwrap();
-
-        let block = match self.web3.eth().block(BlockId::Number(BlockNumber::Latest)).wait() {
-          Ok(s) => s.unwrap(),
-          Err(_e) => return Err(format!("unable to fetch last block"))
+    pub fn initialize(&self, wallet: Address, new_owner: Address) -> Result<H256, String> {
+        let accounts = match self.web3.eth().accounts().wait() {
+            Ok(s) => s,
+            Err(_e) => {
+                return Err(String::from(
+                    "modules :: recovery_manager :: initialize :: unable to fetch accounts",
+                ))
+            }
         };
-      
 
-        //   println!("{}", block.number.unwrap()); // u64 need to convert to u128 //
-        //   println!("{}", block.timestamp); // u256 needs to convert to u128
-        //   println!("{}", block.timestamp.low_u128()); // u256 needs to convert to u128
+        let nonce = match self.nonce() {
+            Ok(s) => s,
+            Err(e) => return Err(e),
+        };
 
-        // let block_number = block.number.unwrap().low_u64();
-        // let block_number = block_number as u128;
-        // let timestamp = block.timestamp.low_u128();
+        let data = self.encode_initialize_recovery(wallet, new_owner);
 
-        let nonce = format!("{:?}{:?}", block.number.unwrap(), block.timestamp);
-        let nonce = U256::from_dec_str(&nonce).unwrap();
-        
-        Ok(nonce)
+        let hash_sign = match self.hash_sign(wallet, data.clone(), nonce) {
+            Ok(s) => s,
+            Err(e) => return Err(e),
+        };
+
+        let signature = helpers::sign(accounts[0], hash_sign, self.web3).unwrap();
+
+        self.execute(wallet, data, nonce, signature.as_bytes())
     }
 
-    pub fn hash_sign(
+    pub fn cancel_recovery(&self, wallet: Address) -> Result<H256, String> {
+        let accounts = match self.web3.eth().accounts().wait() {
+            Ok(s) => s,
+            Err(_e) => return Err(String::from("unable to fetch accounts")),
+        };
+
+        let nonce = match self.nonce() {
+            Ok(s) => s,
+            Err(e) => return Err(e),
+        };
+
+        println!("Nonce {:?}", nonce);
+
+        let data = self.encode_cancel_recovery(wallet);
+        // wallet: Address, value: U256, data: ethabi::Bytes, nonce: U256, gas_price: U256, gas_limit: U256)
+        let hash_sign = match self.hash_sign(wallet, data.clone(), nonce) {
+            Ok(s) => s,
+            Err(e) => return Err(e),
+        };
+
+        let signature = helpers::sign(accounts[0], hash_sign, self.web3).unwrap();
+
+        self.execute(wallet, data, nonce, signature.as_bytes())
+    }
+
+    fn hash_sign(
         &self,
         wallet: Address,
         data: ethabi::Bytes,
@@ -111,11 +99,11 @@ impl<'a, T: web3::Transport> RecoveryManager<'a, T> {
         let params: [ethabi::Token; 7] = [
             ethabi::Token::Address(self.address),
             ethabi::Token::Address(wallet),
-            ethabi::Token::Uint(*value),
+            ethabi::Token::Uint(self.value()),
             ethabi::Token::Bytes(data),
             ethabi::Token::Uint(nonce),
-            ethabi::Token::Uint(*gas_price),
-            ethabi::Token::Uint(*gas_limit),
+            ethabi::Token::Uint(self.gas_price()),
+            ethabi::Token::Uint(self.gas_limit()),
         ];
         let data = function.encode_input(&params).unwrap();
         let result = self.web3.eth().call(
@@ -136,7 +124,26 @@ impl<'a, T: web3::Transport> RecoveryManager<'a, T> {
         }
     }
 
-    pub fn execute(
+    fn encode_initialize_recovery(&self, wallet: Address, new_owner: Address) -> ethabi::Bytes {
+        let function = self.abi.function("executeRecovery").unwrap();
+        let params: [ethabi::Token; 2] = [
+            ethabi::Token::Address(wallet),
+            ethabi::Token::Address(new_owner),
+        ];
+
+        function.encode_input(&params).unwrap()
+    }
+
+    fn encode_cancel_recovery(&self, wallet: Address) -> ethabi::Bytes {
+        let function = self.abi.function("cancelRecovery").unwrap();
+        let params: [ethabi::Token; 1] = [ethabi::Token::Address(wallet)];
+
+        function.encode_input(&params).unwrap()
+    }
+}
+
+impl<'a, T: web3::Transport> Relayer<T> for RecoveryManager<'a, T> {
+    fn execute(
         &self,
         wallet: Address,
         data: ethabi::Bytes,
@@ -156,8 +163,8 @@ impl<'a, T: web3::Transport> RecoveryManager<'a, T> {
             ethabi::Token::Bytes(data),
             ethabi::Token::Uint(nonce),
             ethabi::Token::Bytes(signature.to_vec()),
-            ethabi::Token::Uint(*gas_price),
-            ethabi::Token::Uint(*gas_limit),
+            ethabi::Token::Uint(self.gas_price()),
+            ethabi::Token::Uint(self.gas_limit()),
         ];
         let encoded = function.encode_input(&params).unwrap();
 
@@ -181,68 +188,7 @@ impl<'a, T: web3::Transport> RecoveryManager<'a, T> {
         }
     }
 
-    pub fn encode_initialize_recovery(&self, wallet: Address, new_owner: Address) -> ethabi::Bytes {
-        let function = self.abi.function("executeRecovery").unwrap();
-        let params: [ethabi::Token; 2] = [
-            ethabi::Token::Address(wallet),
-            ethabi::Token::Address(new_owner),
-        ];
-
-        function.encode_input(&params).unwrap()
-    }
-
-    pub fn encode_cancel_recovery(&self, wallet: Address) -> ethabi::Bytes {
-        let function = self.abi.function("cancelRecovery").unwrap();
-        let params: [ethabi::Token; 1] = [ethabi::Token::Address(wallet)];
-
-        function.encode_input(&params).unwrap()
-    }
-
-    pub fn initialize(&self, wallet: Address, new_owner: Address) -> Result<H256, String> {
-        let accounts = match self.web3.eth().accounts().wait() {
-            Ok(s) => s,
-            Err(_e) => return Err(String::from("modules :: recovery_manager :: initialize :: unable to fetch accounts")),
-        };
-
-        let nonce = match self.updated_nonce(wallet) {
-            Ok(s) => s,
-            Err(e) => return Err(e),
-        };
-
-        let data = self.encode_initialize_recovery(wallet, new_owner);
-        
-        let hash_sign = match self.hash_sign(wallet, data.clone(), nonce) {
-            Ok(s) => s,
-            Err(e) => return Err(e),
-        };
-
-        let signature = helpers::sign(accounts[0], hash_sign, self.web3).unwrap();
-
-        self.execute(wallet, data, nonce, signature.as_bytes())
-    }
-
-    pub fn cancel_recovery(&self, wallet: Address) -> Result<H256, String> {
-        let accounts = match self.web3.eth().accounts().wait() {
-            Ok(s) => s,
-            Err(_e) => return Err(String::from("unable to fetch accounts")),
-        };
-
-        let nonce = match self.updated_nonce(wallet) {
-            Ok(s) => s,
-            Err(e) => return Err(e),
-        };
-
-        println!("Nonce {:?}", nonce);
-
-        let data = self.encode_cancel_recovery(wallet);
-        // wallet: Address, value: U256, data: ethabi::Bytes, nonce: U256, gas_price: U256, gas_limit: U256)
-        let hash_sign = match self.hash_sign(wallet, data.clone(), nonce) {
-            Ok(s) => s,
-            Err(e) => return Err(e),
-        };
-
-        let signature = helpers::sign(accounts[0], hash_sign, self.web3).unwrap();
-
-        self.execute(wallet, data, nonce, signature.as_bytes())
+    fn web3(&self) -> &Web3<T> {
+        self.web3
     }
 }
