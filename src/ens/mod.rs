@@ -1,6 +1,7 @@
 use crate::constants;
 use lazy_static::lazy_static;
-use tiny_keccak::Keccak;
+use tiny_keccak::{Hasher, Keccak};
+
 use web3::contract::{Contract, Options};
 use web3::futures::Future;
 use web3::types::{Address, H256};
@@ -112,12 +113,24 @@ fn namehash(name: &str) -> Vec<u8> {
     let mut labels: Vec<&str> = name.split(".").collect();
     labels.reverse();
     for label in labels.iter() {
+
         let mut labelhash = [0u8; 32];
-        Keccak::keccak256(label.as_bytes(), &mut labelhash);
+        let mut keccak = Keccak::v256();
+        keccak.update(label.as_bytes());
+        keccak.finalize(&mut labelhash);
         node.append(&mut labelhash.to_vec());
         labelhash = [0u8; 32];
-        Keccak::keccak256(node.as_slice(), &mut labelhash);
+        let mut keccak = Keccak::v256();
+        keccak.update(node.as_slice());
+        keccak.finalize(&mut labelhash);
         node = labelhash.to_vec();
+
+        // let mut labelhash = [0u8; 32];
+        // Keccak::keccak256(label.as_bytes(), &mut labelhash);
+        // node.append(&mut labelhash.to_vec());
+        // labelhash = [0u8; 32];
+        // Keccak::keccak256(node.as_slice(), &mut labelhash);
+        // node = labelhash.to_vec();
     }
     node
 }

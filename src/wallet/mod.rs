@@ -1,6 +1,7 @@
 use crate::constants;
 use crate::helpers;
 use crate::token::Token;
+// use ethabi::Error;
 use std::str::FromStr;
 use web3::api::Web3;
 use web3::contract::Contract;
@@ -8,7 +9,18 @@ use web3::contract::Options;
 use web3::futures::Future;
 use web3::types::{Address, Bytes, FilterBuilder, H256, U256};
 
-// use ethabi::Token;
+
+// impl From<ethabi::Error> for Error {
+//     fn from(err: ethabi::Error) -> Self {
+//         Error::ABI(format!("{:?}", err))
+//     }
+// }
+
+// impl From<web3::contract::error::Error> for Error {
+//     fn from(err: ethabi::Error) -> Self {
+//         Error::ABI(format!("{:?}", err))
+//     }
+// }
 
 #[derive(Clone, Debug)]
 pub struct Wallet<'a, T: web3::Transport> {
@@ -27,12 +39,7 @@ impl<'a, T: web3::Transport> Wallet<'a, T> {
     }
 
     pub fn ens(&self) -> Result<String, String> {
-        let result = helpers::to_ens(self.address, self.web3);
-
-        match result {
-            Ok(s) => Ok(s),
-            Err(_e) => Err(format!("unable to fetch ENS name for {:?}", self.address)),
-        }
+        helpers::to_ens(self.address, self.web3)
     }
 
     pub fn owner(&self) -> Result<Address, String> {
@@ -53,8 +60,7 @@ impl<'a, T: web3::Transport> Wallet<'a, T> {
             self.web3.eth(),
             guardian_manager,
             constants::abis::GUARDIAN_MANAGER,
-        )
-        .unwrap();
+        ).unwrap();
         let result = guardian_manager.query("guardianStorage", (), None, Options::default(), None);
 
         let guardian_storage = match result.wait() {

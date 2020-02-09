@@ -20,7 +20,11 @@ pub fn ls<T: web3::Transport>(wallet: &str, web3: Web3<T>) {
     });
 
     for module in modules.iter() {
-        list.push(format!("{:?} | {}", module, modules::name(&module)));
+        list.push(format!(
+            "{:?} | {}",
+            module,
+            modules::name(&module).unwrap()
+        ));
     }
 
     tui::header("modules");

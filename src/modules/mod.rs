@@ -74,8 +74,8 @@ lazy_static! {
     };
 }
 
-pub fn name(address: &Address) -> &'static str {
+pub fn name(address: &Address) -> Option<&'static str> {
     let name: &'static str = MODULES.get(address).unwrap_or(&"Unknown module");
 
-    &*name
+    Some(&*name)
 }
